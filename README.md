@@ -1,4 +1,4 @@
-# WardenAI— Telegram бот для мини-магазина
+# WardenAI— Telegram бот для мониторинга сессий
 
 [![Python](https://img.shields.io/badge/Python-3.9+-blue?logo=python)](https://www.python.org/)
 [![Aiogram](https://img.shields.io/badge/Aiogram-3.x-0099cc?logo=telegram)](https://docs.aiogram.dev/)
@@ -9,7 +9,7 @@
 
 ## 📖 О проекте
 
-**WARDEN AI** — это Telegram-бот для мониторинга сессия с помощью AI
+**WARDEN AI** — это Telegram-бот для мониторинга сессий с помощью AI WARDEN на ML
 
 ### 🚀 Быстрый старт
 git clone https://github.com/Tuychiev2005/WARDEN-AI.git
