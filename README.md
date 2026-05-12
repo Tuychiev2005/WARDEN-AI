@@ -12,7 +12,7 @@
 **WARDEN AI** — это Telegram-бот для мониторинга сессия с помощью AI
 
 ### 🚀 Быстрый старт
-git clone https://github.com/Tuychiev2005/minishop-bot.git
+git clone https://github.com/Tuychiev2005/WARDEN-AI.git
 cd Warden1
 pip install aiogram
 python main.py
