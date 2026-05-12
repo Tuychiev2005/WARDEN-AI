@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Warden Help</title>
+
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+
+body{
+  font-family:'Syne',sans-serif;
+  background:#04060e;
+  color:#e2e8f0;
+  min-height:100vh;
+  padding:20px 0 40px;
+}
+
+.grid-bg{
+  position:fixed;inset:0;
+  background-image:
+    linear-gradient(rgba(34,197,94,0.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(34,197,94,0.03) 1px,transparent 1px);
+  background-size:48px 48px;pointer-events:none;
+}
+.glow{
+  position:fixed;width:600px;height:600px;
+  background:radial-gradient(circle,rgba(34,197,94,0.07),transparent 70%);
+  top:40%;left:50%;transform:translate(-50%,-50%);pointer-events:none;
+}
+
+.container{
+  width:min(800px,94vw);margin:0 auto;
+  z-index:2;position:relative;
+}
+
+/* HEADER */
+.header{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+.logo{
+  width:40px;height:40px;border-radius:12px;
+  background:linear-gradient(135deg,#22c55e,#16a34a);
+  display:flex;align-items:center;justify-content:center;
+  font-size:19px;flex-shrink:0;
+}
+.header h1{font-size:24px;font-weight:800;}
+.header h1 span{color:#22c55e;}
+
+/* ── TABS ── */
+.tabs{
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:4px;
+  background:rgba(255,255,255,0.02);
+  border:1px solid rgba(255,255,255,0.05);
+  border-radius:14px;padding:5px;
+  margin-bottom:20px;
+}
+
+.tab{
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:3px;
+  padding:8px 2px;
+  border-radius:10px;
+  border:1px solid transparent;
+  background:transparent;
+  color:#64748b;
+  font-family:'Syne',sans-serif;
+  cursor:pointer;transition:0.18s;
+}
+.tab-icon{font-size:18px;line-height:1;}
+.tab-label{
+  font-size:9px;font-weight:700;
+  line-height:1.2;text-align:center;
+  color:inherit;
+}
+.tab:hover{color:#cbd5e1;}
+.tab.active{
+  background:rgba(34,197,94,0.13);
+  color:#22c55e;
+  border-color:rgba(34,197,94,0.28);
+}
+
+/* PANELS */
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* BLOCK */
+.block{
+  margin-bottom:13px;padding:15px;
+  border-left:3px solid #22c55e;
+  background:rgba(255,255,255,0.02);
+  border-radius:10px;
+}
+.block-title{font-weight:700;color:#22c55e;margin-bottom:7px;font-size:13px;}
+.block-text{font-size:12px;color:#94a3b8;line-height:1.7;}
+
+/* FEAT GRID */
+.feat-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+@media(max-width:420px){.feat-grid{grid-template-columns:1fr;}}
+.feat-card{
+  background:rgba(255,255,255,0.02);
+  border:1px solid rgba(255,255,255,0.05);
+  border-radius:11px;padding:13px;transition:0.18s;
+}
+.feat-card:hover{border-color:rgba(34,197,94,0.3);}
+.feat-icon{font-size:19px;margin-bottom:6px;}
+.feat-name{font-weight:700;font-size:12px;margin-bottom:3px;color:#e2e8f0;}
+.feat-desc{font-size:11px;color:#64748b;line-height:1.5;}
+
+/* STEPS */
+.steps{display:flex;flex-direction:column;gap:9px;}
+.step{
+  display:flex;gap:12px;align-items:flex-start;
+  background:rgba(255,255,255,0.02);
+  border:1px solid rgba(255,255,255,0.05);
+  border-radius:11px;padding:12px;
+}
+.step-num{
+  min-width:26px;height:26px;border-radius:50%;
+  background:#22c55e;color:#04060e;
+  font-weight:800;font-size:12px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.step-title{font-weight:700;font-size:12px;margin-bottom:3px;color:#e2e8f0;}
+.step-desc{font-size:11px;color:#64748b;line-height:1.5;}
+
+/* MOCKUP */
+.mockup{
+  margin-top:9px;border-radius:9px;overflow:hidden;
+  border:1px solid rgba(255,255,255,0.07);background:#0d1117;
+}
+.mockup-bar{
+  background:#161b22;padding:6px 11px;
+  display:flex;align-items:center;gap:6px;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.dot{width:7px;height:7px;border-radius:50%;}
+.mockup-url{
+  flex:1;background:#0d1117;border-radius:4px;
+  padding:3px 7px;font-family:'Space Mono',monospace;
+  font-size:9px;color:#64748b;
+  border:1px solid rgba(255,255,255,0.05);
+}
+.mockup-body{padding:11px;}
+.mock-form{display:flex;flex-direction:column;gap:6px;}
+.mock-field{
+  background:#161b22;border:1px solid rgba(255,255,255,0.08);
+  border-radius:6px;padding:7px 10px;
+  display:flex;flex-direction:column;gap:2px;
+}
+.mock-field.hi{border-color:rgba(34,197,94,0.45);}
+.mock-label{font-size:8px;color:#22c55e;font-family:'Space Mono',monospace;letter-spacing:1px;}
+.mock-value{font-family:'Space Mono',monospace;font-size:10px;color:#e2e8f0;}
+.mock-value.blur{filter:blur(3px);user-select:none;}
+.mock-btn{
+  background:#22c55e;color:#04060e;font-weight:700;
+  font-size:11px;padding:8px;border-radius:6px;text-align:center;
+}
+.menu-item{
+  padding:8px 10px;border-radius:6px;
+  border:1px solid rgba(255,255,255,0.05);
+  color:#64748b;font-size:11px;margin-bottom:4px;
+}
+.menu-item.active{
+  border-color:rgba(34,197,94,0.5);
+  background:rgba(34,197,94,0.08);
+  color:#22c55e;font-weight:700;
+}
+
+/* TAG */
+.tag{
+  display:inline-block;
+  background:rgba(34,197,94,0.1);
+  border:1px solid rgba(34,197,94,0.3);
+  border-radius:4px;padding:1px 5px;
+  font-family:'Space Mono',monospace;font-size:10px;color:#22c55e;
+}
+
+/* AI HERO */
+.ai-hero{
+  background:linear-gradient(135deg,rgba(34,197,94,0.08),rgba(34,197,94,0.02));
+  border:1px solid rgba(34,197,94,0.2);
+  border-radius:13px;padding:20px;
+  text-align:center;margin-bottom:16px;
+}
+.ai-hero .icon{font-size:34px;margin-bottom:7px;}
+.ai-hero h2{font-size:17px;font-weight:800;color:#22c55e;margin-bottom:5px;}
+.ai-hero p{font-size:11px;color:#64748b;line-height:1.6;max-width:440px;margin:0 auto;}
+
+.ai-list{display:flex;flex-direction:column;gap:8px;}
+.ai-item{
+  display:flex;gap:11px;align-items:flex-start;
+  background:rgba(255,255,255,0.02);
+  border:1px solid rgba(255,255,255,0.05);
+  border-radius:10px;padding:12px;
+}
+.ai-icon{font-size:17px;flex-shrink:0;margin-top:1px;}
+.ai-item-title{font-weight:700;font-size:12px;margin-bottom:2px;color:#e2e8f0;}
+.ai-item-desc{font-size:11px;color:#64748b;line-height:1.5;}
+
+/* SECURITY */
+.sec-row{
+  display:flex;gap:10px;align-items:flex-start;
+  padding:10px 0;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+}
+.sec-row:last-child{border-bottom:none;}
+.sec-badge{
+  min-width:32px;height:32px;border-radius:8px;
+  background:rgba(34,197,94,0.1);
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;flex-shrink:0;
+}
+.sec-title{font-weight:700;font-size:12px;margin-bottom:2px;color:#e2e8f0;}
+.sec-desc{font-size:11px;color:#64748b;line-height:1.5;}
+
+/* WARN */
+.warn-box{
+  background:rgba(239,68,68,0.07);
+  border:1px solid rgba(239,68,68,0.2);
+  border-radius:9px;padding:12px;
+  font-size:11px;color:#fca5a5;line-height:1.6;
+  margin-bottom:12px;
+}
+
+.arrow{text-align:center;color:#22c55e;font-size:12px;opacity:0.25;margin:-2px 0;}
+a.link{color:#22c55e;text-decoration:none;border-bottom:1px dashed rgba(34,197,94,0.4);}
+a.link:hover{border-bottom-style:solid;}
+
+.close-btn{
+  display:block;width:100%;margin-top:24px;padding:13px;
+  background:#22c55e;color:#04060e;font-weight:700;
+  border-radius:12px;border:none;cursor:pointer;
+  font-family:'Syne',sans-serif;font-size:14px;transition:0.2s;
+}
+.close-btn:hover{background:#16a34a;transform:translateY(-1px);}
+</style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+<div class="glow"></div>
+
+<div class="container">
+
+  <div class="header">
+    <div class="logo">🛡</div>
+    <h1>Warden <span>Help</span></h1>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('howto',this)">
+      <span class="tab-icon">📘</span>
+      <span class="tab-label">Как<br>пользоваться</span>
+    </button>
+    <button class="tab" onclick="switchTab('api',this)">
+      <span class="tab-icon">🔑</span>
+      <span class="tab-label">API ID<br>/ HASH</span>
+    </button>
+    <button class="tab" onclick="switchTab('features',this)">
+      <span class="tab-icon">⚙️</span>
+      <span class="tab-label">Функцио-<br>нал</span>
+    </button>
+    <button class="tab" onclick="switchTab('ai',this)">
+      <span class="tab-icon">🤖</span>
+      <span class="tab-label">Warden<br>AI</span>
+    </button>
+    <button class="tab" onclick="switchTab('security',this)">
+      <span class="tab-icon">🔐</span>
+      <span class="tab-label">Безопас-<br>ность</span>
+    </button>
+    <button class="tab" onclick="switchTab('limits',this)">
+      <span class="tab-icon">⚠️</span>
+      <span class="tab-label">Огра-<br>ничения</span>
+    </button>
+  </div>
+
+  <!-- ══ КАК ПОЛЬЗОВАТЬСЯ ══ -->
+  <div id="tab-howto" class="tab-panel active">
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div>
+          <div class="step-title">Откройте бота в Telegram</div>
+          <div class="step-desc">Найдите бота Warden и отправьте команду <span class="tag">/start</span>.</div>
+        </div>
+      </div>
+      <div class="arrow">↓</div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div>
+          <div class="step-title">Нажмите «Connect Warden 🛡»</div>
+          <div class="step-desc">Кнопка откроет WebApp — защищённый интерфейс прямо внутри Telegram.</div>
+        </div>
+      </div>
+      <div class="arrow">↓</div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div style="width:100%">
+          <div class="step-title">Введите API ID и API HASH</div>
+          <div class="step-desc">Получить их можно на <a class="link" href="https://my.telegram.org" target="_blank">my.telegram.org</a>. Подробнее — во вкладке «🔑 API ID / HASH».</div>
+          <div class="mockup">
+            <div class="mockup-bar">
+              <div class="dot" style="background:#ff5f57"></div>
+              <div class="dot" style="background:#febc2e"></div>
+              <div class="dot" style="background:#28c840"></div>
+              <div class="mockup-url">🔒 Warden WebApp</div>
+            </div>
+            <div class="mockup-body">
+              <div class="mock-form">
+                <div class="mock-field hi"><div class="mock-label">API ID</div><div class="mock-value">1234567</div></div>
+                <div class="mock-field hi"><div class="mock-label">API HASH</div><div class="mock-value blur">a1b2c3d4e5f6a1b2c3d4</div></div>
+                <div class="mock-btn">🛡 Connect</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="arrow">↓</div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div>
+          <div class="step-title">Введите номер телефона и код</div>
+          <div class="step-desc">Telegram пришлёт код в приложение. Если включена 2FA — введите пароль.</div>
+        </div>
+      </div>
+      <div class="arrow">↓</div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div>
+          <div class="step-title">Готово — вы в панели Warden</div>
+          <div class="step-desc">Warden начинает мониторинг сессии в реальном времени. Уведомления об угрозах приходят прямо в бот.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ API ID / HASH ══ -->
+  <div id="tab-api" class="tab-panel">
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div style="width:100%">
+          <div class="step-title">Перейдите на my.telegram.org</div>
+          <div class="step-desc">Откройте <a class="link" href="https://my.telegram.org" target="_blank">my.telegram.org</a> в браузере — официальный портал Telegram.</div>
+          <div class="mockup">
+            <div class="mockup-bar">
+              <div class="dot" style="background:#ff5f57"></div>
+              <div class="dot" style="background:#febc2e"></div>
+              <div class="dot" style="background:#28c840"></div>
+              <div class="mockup-url">🔒 my.telegram.org</div>
+            </div>
+            <div class="mockup-body" style="text-align:center;padding:16px;">
+              <div style="font-size:24px;margin-bottom:5px;">✈️</div>
+              <div style="font-weight:800;font-size:13px;color:#e2e8f0;margin-bottom:3px;">Telegram</div>
+              <div style="color:#64748b;font-size:10px;margin-bottom:11px;">Log in to your account</div>
+              <div class="mock-form">
+                <div class="mock-field"><div class="mock-label">Phone number</div><div class="mock-value">+7 900 ••• •• ••</div></div>
+                <div class="mock-btn">Next →</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="arrow">↓</div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div>
+          <div class="step-title">Войдите через номер телефона</div>
+          <div class="step-desc">Введите номер в формате <span class="tag">+79001234567</span>. Telegram пришлёт код в приложение.</div>
+        </div>
+      </div>
+      <div class="arrow">↓</div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div style="width:100%">
+          <div class="step-title">Выберите «API development tools»</div>
+          <div class="step-desc">На главной странице нажмите на этот пункт меню.</div>
+          <div class="mockup">
+            <div class="mockup-bar">
+              <div class="dot" style="background:#ff5f57"></div>
+              <div class="dot" style="background:#febc2e"></div>
+              <div class="dot" style="background:#28c840"></div>
+              <div class="mockup-url">🔒 my.telegram.org</div>
+            </div>
+            <div class="mockup-body">
+              <div class="menu-item active">🔧 API development tools</div>
+              <div class="menu-item">👤 Account info</div>
+              <div class="menu-item">🔐 Active sessions</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="arrow">↓</div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div style="width:100%">
+          <div class="step-title">Создайте приложение</div>
+          <div class="step-desc"><span class="tag">App title</span> — любое, <span class="tag">Short name</span> — латинское, <span class="tag">Platform</span> — Other. Нажмите Create application.</div>
+          <div class="mockup">
+            <div class="mockup-bar">
+              <div class="dot" style="background:#ff5f57"></div>
+              <div class="dot" style="background:#febc2e"></div>
+              <div class="dot" style="background:#28c840"></div>
+              <div class="mockup-url">🔒 my.telegram.org/apps</div>
+            </div>
+            <div class="mockup-body">
+              <div class="mock-form">
+                <div class="mock-field"><div class="mock-label">App title</div><div class="mock-value">My App</div></div>
+                <div class="mock-field"><div class="mock-label">Short name</div><div class="mock-value">myapp</div></div>
+                <div class="mock-field"><div class="mock-label">Platform</div><div class="mock-value">Other</div></div>
+                <div class="mock-btn">Create application</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="arrow">↓</div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div style="width:100%">
+          <div class="step-title">Скопируйте API ID и API HASH</div>
+          <div class="step-desc">Скопируйте <span class="tag">App api_id</span> (число) и <span class="tag">App api_hash</span> (строка).</div>
+          <div class="mockup">
+            <div class="mockup-bar">
+              <div class="dot" style="background:#ff5f57"></div>
+              <div class="dot" style="background:#febc2e"></div>
+              <div class="dot" style="background:#28c840"></div>
+              <div class="mockup-url">🔒 my.telegram.org/apps</div>
+            </div>
+            <div class="mockup-body">
+              <div class="mock-form">
+                <div class="mock-field hi"><div class="mock-label">App api_id ← скопировать</div><div class="mock-value">1234567</div></div>
+                <div class="mock-field hi"><div class="mock-label">App api_hash ← скопировать</div><div class="mock-value blur">a1b2c3d4e5f6a1b2c3d4e5f6</div></div>
+              </div>
+              <div style="margin-top:7px;font-size:10px;color:#ef4444;opacity:0.8;">⚠️ Никому не передавайте эти данные</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ ФУНКЦИОНАЛ ══ -->
+  <div id="tab-features" class="tab-panel">
+    <div class="feat-grid">
+      <div class="feat-card"><div class="feat-icon">📡</div><div class="feat-name">Мониторинг сессии</div><div class="feat-desc">Отслеживает входящие сообщения аккаунта в реальном времени.</div></div>
+      <div class="feat-card"><div class="feat-icon">🚨</div><div class="feat-name">Live-уведомления</div><div class="feat-desc">При угрозе бот мгновенно присылает тип, уровень риска и детали.</div></div>
+      <div class="feat-card"><div class="feat-icon">🎣</div><div class="feat-name">Обнаружение фишинга</div><div class="feat-desc">Распознаёт фишинговые ссылки, мошеннические схемы.</div></div>
+      <div class="feat-card"><div class="feat-icon">💬</div><div class="feat-name">Анти-спам</div><div class="feat-desc">Определяет спам и флуд по паттернам поведения отправителей.</div></div>
+      <div class="feat-card"><div class="feat-icon">🏳️</div><div class="feat-name">Белый список</div><div class="feat-desc">Доверенные пользователи в whitelist не проверяются.</div></div>
+      <div class="feat-card"><div class="feat-icon">📊</div><div class="feat-name">Аналитика угроз</div><div class="feat-desc">Дашборд с графиками по дням и историей событий.</div></div>
+      <div class="feat-card"><div class="feat-icon">🔒</div><div class="feat-name">Управление 2FA</div><div class="feat-desc">Настройка двухфакторной аутентификации из панели Warden.</div></div>
+      <div class="feat-card"><div class="feat-icon">🔄</div><div class="feat-name">Авто-восстановление</div><div class="feat-desc">Watchdog переподключает сессию при обрыве соединения.</div></div>
+    </div>
+  </div>
+
+  <!-- ══ WARDEN AI ══ -->
+  <div id="tab-ai" class="tab-panel">
+    <div class="ai-hero">
+      <div class="icon">🤖</div>
+      <h2>Warden AI</h2>
+      <p>Встроенный интеллектуальный модуль анализирует активность Telegram-сессии в реальном времени и автоматически выявляет угрозы.</p>
+    </div>
+    <div class="ai-list">
+      <div class="ai-item"><div class="ai-icon">🎣</div><div><div class="ai-item-title">Обнаружение фишинга</div><div class="ai-item-desc">AI анализирует ссылки и тексты, выявляя поддельные сайты, кражу данных, мошеннические схемы.</div></div></div>
+      <div class="ai-item"><div class="ai-icon">🚫</div><div><div class="ai-item-title">Обнаружение скама</div><div class="ai-item-desc">Распознаёт схемы мошенничества: фейковые инвестиции, «подарки», просьбы перевести деньги.</div></div></div>
+      <div class="ai-item"><div class="ai-icon">💬</div><div><div class="ai-item-title">Фильтрация спама и флуда</div><div class="ai-item-desc">Анализируется частота сообщений и паттерны поведения. Массовые рассылки выявляются автоматически.</div></div></div>
+      <div class="ai-item"><div class="ai-icon">📊</div><div><div class="ai-item-title">Оценка уровня риска</div><div class="ai-item-desc">Каждому событию присваивается: <span class="tag">HIGH</span> / <span class="tag">MEDIUM</span> / <span class="tag">LOW</span> для быстрой приоритизации.</div></div></div>
+      <div class="ai-item"><div class="ai-icon">⚡</div><div><div class="ai-item-title">Реакция в реальном времени</div><div class="ai-item-desc">Анализ происходит в момент получения сообщения. Уведомление приходит спустя секунды.</div></div></div>
+    </div>
+  </div>
+
+  <!-- ══ БЕЗОПАСНОСТЬ ══ -->
+  <div id="tab-security" class="tab-panel">
+    <div class="block" style="margin-bottom:13px;">
+      <div class="block-title">🔐 Принципы защиты данных</div>
+      <div class="block-text">Все данные сессии обрабатываются через защищённый backend и никогда не хранятся в открытом виде.</div>
+    </div>
+    <div class="block">
+      <div class="sec-row"><div class="sec-badge">🔑</div><div><div class="sec-title">Hashing (SHA-256 / bcrypt)</div><div class="sec-desc">Данные хешируются перед записью. Даже при утечке БД — исходные значения не восстановить.</div></div></div>
+      <div class="sec-row"><div class="sec-badge">🧂</div><div><div class="sec-title">Salt-защита</div><div class="sec-desc">Каждый хеш уникален благодаря случайной соли. Исключает атаки по радужным таблицам.</div></div></div>
+      <div class="sec-row"><div class="sec-badge">🔒</div><div><div class="sec-title">Шифрование перед записью</div><div class="sec-desc">Данные сессии шифруются до попадания в базу данных. Без ключа прочитать невозможно.</div></div></div>
+      <div class="sec-row"><div class="sec-badge">🌐</div><div><div class="sec-title">Защищённый backend</div><div class="sec-desc">Вся обработка на стороне сервера. WebApp работает через HTTPS.</div></div></div>
+      <div class="sec-row"><div class="sec-badge">⏱</div><div><div class="sec-title">Rate limiting</div><div class="sec-desc">Ограничение запросов с одного IP защищает от атак перебором.</div></div></div>
+    </div>
+  </div>
+
+  <!-- ══ ОГРАНИЧЕНИЯ ══ -->
+  <div id="tab-limits" class="tab-panel">
+    <div class="warn-box">⚠️ Внимательно прочитайте правила использования Warden перед началом работы.</div>
+    <div class="block">
+      <div class="block-title">📋 Правила использования</div>
+      <div class="block-text">
+        • Используйте только <strong style="color:#e2e8f0">свои</strong> Telegram-аккаунты.<br>
+        • Запрещено использовать систему для слежки за другими.<br>
+        • Запрещено подключать чужие аккаунты без разрешения.<br>
+        • Данные сессии нельзя передавать третьим лицам.<br>
+        • Нарушение правил может привести к блокировке аккаунта Telegram.
+      </div>
+    </div>
+    <div class="block">
+      <div class="block-title">🚫 Технические ограничения</div>
+      <div class="block-text">
+        • Одновременно поддерживается одна активная сессия на пользователя.<br>
+        • История алертов хранится <strong style="color:#e2e8f0">30 дней</strong>, затем удаляется.<br>
+        • Warden анализирует только входящие сообщения.<br>
+        • Система не предназначена для автоматических действий с аккаунтом.
+      </div>
+    </div>
+    <div class="block">
+      <div class="block-title">⚖️ Ответственность</div>
+      <div class="block-text">Warden — инструмент защиты и мониторинга. Ответственность за способ использования лежит на пользователе.</div>
+    </div>
+  </div>
+
+  <button class="close-btn" onclick="Telegram.WebApp.close()">⬅ Закрыть</button>
+
+</div>
+
+<script>
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+</script>
+</body>
+</html>

