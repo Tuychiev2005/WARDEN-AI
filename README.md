@@ -105,7 +105,7 @@ Database
 # 🚀 Установка
 
 ## 1. Клонировать проект
-git clone https://github.com/YOUR_USERNAME/Warden-Security-System.git
+git clone https://github.com/Tuychiev2005/Warden-Security-System.git
 cd Warden-Security-System
 
 ## 2. Установить зависимости
